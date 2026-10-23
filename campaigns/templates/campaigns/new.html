@@ -1,0 +1,48 @@
+{% extends 'campaigns/base.html' %}
+{% block title %}Новая кампания{% endblock %}
+{% block content %}
+<h1>Новая кампания</h1>
+<p class="muted">Создаёт кампанию в Keitaro с двумя потоками: посетители из указанных стран уходят на google.com, все остальные на выбранный оффер.</p>
+<form method="post" class="grid">{% csrf_token %}
+  <label for="name">Название</label>
+  <input type="text" id="name" name="name" value="{{ form.name }}" required>
+
+  <label for="geo">Гео</label>
+  <input type="text" id="geo" name="geo" value="{{ form.geo }}" placeholder="MX,AU,RO" required>
+  <div class="hint">Двухбуквенные коды стран через запятую. Этот трафик уйдёт на google.com</div>
+
+  <label for="offer">Оффер</label>
+  <input type="text" id="offer" name="offer" value="{{ form.offer }}" list="offers-list" placeholder="Поиск по ID или названию" autocomplete="off" required>
+  <div class="hint">Остальной трафик уйдёт на этот оффер</div>
+
+  <label for="domain_id">Домен</label>
+  {% if domains %}
+  <select id="domain_id" name="domain_id"><option value="">не задан</option>
+    {% for d in domains %}<option value="{{ d.id }}" {% if form.domain_id == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
+  {% else %}
+  <input type="text" id="domain_id" name="domain_id" value="{{ form.domain_id }}" placeholder="ID домена">
+  <div class="hint">API не вернул ни одного домена для этого ключа, поэтому ID вводится вручную</div>
+  {% endif %}
+
+  <label for="group_id">Группа</label>
+  {% if groups %}
+  <select id="group_id" name="group_id"><option value="">без группы</option>
+    {% for g in groups %}<option value="{{ g.id }}" {% if form.group_id == g.id|stringformat:'s' %}selected{% endif %}>{{ g.name }}</option>{% endfor %}</select>
+  {% else %}
+  <input type="text" id="group_id" name="group_id" value="{{ form.group_id }}" placeholder="ID группы">
+  <div class="hint">API не вернул ни одной группы кампаний, ID вводится вручную</div>
+  {% endif %}
+
+  <label for="traffic_source_id">Источник</label>
+  {% if sources %}
+  <select id="traffic_source_id" name="traffic_source_id"><option value="">не задан</option>
+    {% for s in sources %}<option value="{{ s.id }}" {% if form.traffic_source_id == s.id|stringformat:'s' %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+  {% else %}
+  <input type="text" id="traffic_source_id" name="traffic_source_id" value="{{ form.traffic_source_id }}" placeholder="ID источника">
+  <div class="hint">API не вернул ни одного источника, ID вводится вручную</div>
+  {% endif %}
+
+  <span></span>
+  <div><button class="primary">Создать в Keitaro</button></div>
+</form>
+{% endblock %}

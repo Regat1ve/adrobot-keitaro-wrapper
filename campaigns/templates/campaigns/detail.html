@@ -1,0 +1,68 @@
+{% extends 'campaigns/base.html' %}
+{% block title %}{{ campaign.name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{% url 'campaigns' %}">Кампании</a> / {{ campaign.name }} / Keitaro streams</p>
+<h1>{{ campaign.name }} <span class="muted">#{{ campaign.kt_id }}</span></h1>
+<div class="bar">
+  <form method="post" action="{% url 'campaign_fetch' campaign.kt_id %}" class="inline"
+        onsubmit="return !document.querySelector('.stream.dirty') || confirm('Неопубликованные правки будут сброшены. Загрузить потоки из Keitaro?')">
+    {% csrf_token %}<button>Fetch streams from KT</button></form>
+  <a class="btn" href="{{ kt_url }}" target="_blank" rel="noopener">View in KT ↗</a>
+  <span class="muted">{% if campaign.fetched_at %}Синхронизировано {{ campaign.fetched_at|date:'d.m.Y H:i' }}{% endif %}</span>
+</div>
+
+{% for stream in streams %}
+<section class="stream {% if stream.is_dirty %}dirty{% endif %}" id="stream-{{ stream.id }}">
+  <div class="stream-head">
+    <h2>{{ stream.name }} <span class="muted">#{{ stream.kt_id }}</span></h2>
+    {% if stream.is_dirty %}
+    <div>
+      <span class="muted">Не опубликовано</span>
+      <form method="post" action="{% url 'stream_action' stream.id 'cancel' %}" class="inline">{% csrf_token %}<button>Cancel</button></form>
+      <form method="post" action="{% url 'stream_action' stream.id 'push' %}" class="inline">{% csrf_token %}<button class="primary">Push to KT</button></form>
+    </div>
+    {% endif %}
+  </div>
+  {% if stream.has_offers %}
+  <table>
+    <tr><th>ID</th><th>Оффер</th><th>Доля</th><th>Статус</th><th>Закрепить</th><th></th></tr>
+    {% for link in stream.links.all %}
+    <tr class="{% if not link.is_live %}gone{% endif %}">
+      <td>{{ link.offer_id }}</td>
+      <td>{{ link.offer_name }}</td>
+      <td class="share">{{ link.share }}%{% if link.share != link.published_share and link.state == 'active' %} <span class="muted">(было {{ link.published_share }}%)</span>{% endif %}</td>
+      <td>{% if link.state != 'active' %}<span class="badge {{ link.state }}">{{ link.get_state_display }}</span>{% endif %}</td>
+      <td class="pin">
+        {% if link.is_live %}
+          {% if link.pinned %}
+          <b>{{ link.share }}% закреплено</b> <form method="post" action="{% url 'link_action' link.id 'unpin' %}" class="inline">{% csrf_token %}<button class="small">Открепить</button></form>
+          {% else %}
+          <form method="post" action="{% url 'link_action' link.id 'pin' %}" class="inline">{% csrf_token %}
+            <input name="share" type="number" min="1" max="100" value="{{ link.share }}">% <button class="small">Pin</button></form>
+          {% endif %}
+        {% endif %}
+      </td>
+      <td>
+        {% if link.is_live %}
+        <form method="post" action="{% url 'link_action' link.id 'remove' %}" class="inline">{% csrf_token %}<button class="small">Remove</button></form>
+        {% else %}
+        <form method="post" action="{% url 'link_action' link.id 'restore' %}" class="inline">{% csrf_token %}<button class="small">Bring back</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="stream-body">
+    <form method="post" action="{% url 'stream_action' stream.id 'add' %}" class="bar" style="margin:0">{% csrf_token %}
+      <input name="offer" list="offers-list" placeholder="Добавить оффер: ID или название" autocomplete="off" size="50">
+      <button>Добавить</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="stream-body muted">Поток без офферов: обёртка показывает его как есть и не разбирает фильтры и редиректы.</div>
+  {% endif %}
+</section>
+{% empty %}
+<p class="muted">Потоков нет. Нажмите «Fetch streams from KT».</p>
+{% endfor %}
+{% endblock %}

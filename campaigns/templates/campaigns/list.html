@@ -1,0 +1,24 @@
+{% extends 'campaigns/base.html' %}
+{% block title %}Кампании{% endblock %}
+{% block content %}
+<h1>Кампании Keitaro</h1>
+<div class="bar">
+  <form method="get" class="inline"><input name="q" value="{{ q }}" placeholder="Название или ID"> <button>Найти</button></form>
+  <form method="post" action="{% url 'campaign_open' %}" class="inline">{% csrf_token %}
+    <input name="kt_id" placeholder="ID кампании" size="12"> <button>Открыть по ID</button></form>
+  <a class="btn primary" href="{% url 'campaign_new' %}">Новая кампания</a>
+</div>
+<table>
+  <tr><th>ID</th><th>Название</th><th>Обновлена</th><th></th></tr>
+  {% for c in campaigns %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td><a href="{% url 'campaign' c.id %}">{{ c.name }}</a></td>
+    <td class="muted">{{ c.updated_at }}</td>
+    <td>{% if c.id in local %}<span class="badge">в обёртке</span>{% endif %}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="4" class="muted">Кампаний не найдено</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
